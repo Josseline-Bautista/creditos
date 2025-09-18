@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8">
+        <title>Examen Practico Creditos</title>
+        <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+        <script src="http://cdn.jsdelivr.net/npm/chart.js"></script>
+    </head>
+    <body>
+        <h1>Examen Práctico Créditos</h1>
+
+        /*---------Formulario--------------*/
+        <section>
+            <form class="nuevo" id="CreditoF" method="POST" action="/api/creditos">
+                <h3>Registrar un nuevo crédito</h3>
+                <label>Cliente: <input class="cuadro" type="text" name="cliente" placeholder="Cliente" required></label><br>
+                <label>Monto: <input class="cuadro" type="number" step="0.01" name="monto" placeholder="Monto" required></label><br>
+                <label>Tasa de interés (%): <input class="cuadro" type="number" step="0.01" name="tasa_interes" placeholder="Tasa de interés" required></label><br>
+                <label>Plazo (en meses): <input class="cuadro" type="number" name="plazo" placeholder="Plazo" required></label><br>
+                <label>Fecha de otorgamiento: <input class="cuadro" type="date" name="fecha_otorgamiento" required></label><br>
+                <button type="submit">Agregar</button>
+            </form>
+        </section>
+        
+<br><br>
+        <section>
+            <h2>
+                Lista de Créditos
+            </h2>
+            <table id="Tcreditos" align="center">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Monto</th>
+                        <th>Tasa</th>
+                        <th>Plazo</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+<br><br>
+        <section>
+            <h2>
+                Gráfica
+            </h2>
+            <label>Tipo: 
+                <select id="chartType">
+                    <option value="month">Total por mes</option>
+                    <option value="cliente">Por cliente</option>
+                    <option value="distribucion">Distribucón de montos</option>
+                </select>
+            </label>
+            <div style="width: 70%; height: 300px;">
+                <canvas id="creditChart"></canvas>
+            </div>
+            <h2>
+                Versión del servidor (PNG)
+            </h2>
+            <img id="serverChart" src="/chart.png" alt="Grafica generada por el servidor" >
+            </section>
+
+        <script>
+            async function fetchCreditos() {
+                const res = await fetch('/api/creditos');
+                return res.json();
+            }
+
+            async function renderTable() {
+                const data =await fetchCreditos();
+                const tbody = document.querySelector('#Tcreditos tbody');
+                tbody.innerHTML = '';
+                data.forEach(c => {
+                    const tr = document.createElement('tr');
+                    tr.dataset.id = c.id;
+                    tr.innerHTML = `<td>${c.id}</td>
+                    <td>${c.cliente}</td>
+                    <td>${c.monto}</td>
+                    <td>${c.tasa_interes}</td>
+                    <td>${c.plazo}</td>
+                    <td>${c.fecha_otorgamiento}</td>
+                    <td>
+                        <button class="editarB">Editar</button>
+                        <button class="eliminarB">Eliminar</button>   
+                    </td>`;
+                tbody.appendChild(tr);
+                });
+                attachButtons();
+            }
+
+            function attachButtons(){
+                document.querySelectorAll('.eliminarB').forEach(btn => {
+                    btn.onclick = async (e) => {
+                        const id = e.target.closest('tr').dataset.id;
+                        if (!confirm('Eliminar credito id ' + id + '?')) return;
+                        const res = await fetch ('/api/creditos/' + id, {method: 'DELETE'});
+                        if (res.ok) {
+                            await renderTable();
+                            updateChart();
+                            document.getElementById('serverChart').src = '/chart.png?ts=' + Date.now();
+                        }
+                        else
+                        {
+                            alert('Error al eliminar');
+                        }
+                    };
+                });
+
+                document.querySelectorAll('.editarB').forEach(btn => {
+                    btn.onclick = async (e) => {
+                        const tr = e.target.closest('tr');
+                        const id = tr.dataset.id;
+                        const cliente = prompt('Cliente:', tr.children[1].innerText);
+                        if (cliente === null) return;
+                        const monto = prompt('Monto:', tr.children[2].innerText);
+                        if (monto === null) return;
+                        const tasa = prompt('tasa de interes:', tr.children[3].innerText);
+                        if (tasa === null) return;
+                        const plazo = prompt('Plazo (en meses):', tr.children[4].innerText);
+                        if (plazo === null) return;
+                        const fecha = prompt('Fecha (YYYY-MM-DD):', tr.children[5].innerText);
+                        if (fecha === null) return;
+
+                        //Validacion
+                        if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {alert('Fecha invalida'); return;}
+
+                        const payload = {cliente, monto: parseFloat(monto), tasa_interes: parseFloat(tasa), plazo: parseInt(plazo), fecha_otorgamiento: fecha}
+                        const res = await fetch('/api/creditos/' + id, {
+                            method: 'PUT',
+                            headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (res.ok){
+                            await renderTable();
+                            updateChart();
+                            document.getElementById('serverChart').src = '/chart.png?ts=' + Date.now();
+                        }
+                        else
+                        {
+                            const txt = await res.json();
+                            alert('Error: ' + (txt.error || 'No identificado'));
+                        }
+                    };
+                });
+            }
+
+            //Envia JSON al endpoint
+
+            document.getElementById('CreditoF').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const f = e.target;
+                const fd = new FormData(f);
+                const payload = Object.fromEntries(fd.entries());
+                payload.monto = parseFloat(payload.monto);
+                payload.tasa_interes = parseFloat(payload.tasa_interes);
+                payload.plazo = parseInt(payload.plazo);
+                //Validacion
+                if(!payload.cliente || isNaN(payload.monto) || isNaN(payload.tasa_interes) || isNaN(payload.plazo) || !payload.fecha_otorgamiento){
+                    alert('Completa correctamente los campos');
+                    return;
+                }
+                if(!/^\d{4}-\d{2}-\d{2}$/.test(payload.fecha_otorgamiento)){
+                    alert('Fecha invalida (YYYY-MM-DD)');
+                    return;
+                }
+
+                const res = await fetch('/api/creditos', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify(payload)
+                });
+
+                if(res.status === 201){
+                    f.reset();
+                    await renderTable();
+                    updateChart();
+                    document.getElementById('serverChart').src = '/chart.png?ts=' + Date.now();
+                }
+                else
+                {
+                    const txt = await res.json();
+                    alert('Error: ' + (txt.error || 'No identificado'));
+                }
+            });
+
+            //obtiene los stats (graficas)
+
+            let chart;
+            async function updateChart(){
+                const type = document.getElementById('chartType').value;
+                const endpoint = type === 'month' ? '/api/stats/month'
+                                : type === 'cliente' ? '/api/stats/cliente'
+                                : '/api/stats/distribucion';
+                const res = await fetch(endpoint);
+                const data = await res.json();
+                const labels = data.labels;
+                const totals = data.totals;
+                const ctx = document.getElementById('creditChart').getContext('2d');
+                if (chart) chart.destroy();
+                chart = new Chart(ctx,{
+                    type: 'bar',
+                    data: {labels: labels, datasets:[{label:'Monto', data: totals}]},
+                    options:{responsive:true}
+                });
+            }
+
+            document.getElementById('chartType').addEventListener('change', updateChart);
+
+            //inicializacion
+            window.addEventListener('load', async() => {
+                await renderTable();
+                await updateChart();
+            });
+
+        </script>
+        </section>
+    </body>
+</html>

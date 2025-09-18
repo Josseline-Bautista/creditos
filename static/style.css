@@ -1,0 +1,100 @@
+body {
+    background: linear-gradient(to right,#ffbbbb, #a9f1df);
+    font-family: Arial, sans-serif; 
+    margin: 18px; 
+}
+
+h1 { 
+    color: white;
+    background: #24303c;
+    font-size: 22px;
+    text-align: center;
+   
+}
+
+h2{
+    background-color: #24303c;
+    color: white;
+    padding: 5px;
+    text-align: center;
+    margin-right: 100px;
+    margin-bottom: 50px;
+    width: 500px;
+    box-shadow: 7px 13px 37px #000;
+    font-size: 18px;
+    margin-top: 60px;
+}
+
+section { 
+   display: block; 
+   margin-left: 50px;
+   margin-top: 20px;
+   margin: auto;
+}
+
+.nuevo{
+    background: #24303c;
+    width: 340px;
+    padding: 25px;
+    margin: auto;
+    margin-top: 80px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    box-shadow: 7px 13px 37px #000;
+}
+
+.nuevo h3{
+    font-size: 18px;
+    margin-bottom: 40px;
+    text-align: center;
+    color: white;
+}
+
+.nuevo label{
+    color: white;
+    font-size: 15px;
+}
+
+.cuadro{
+   width: 120px;
+   margin-left: 10px;
+   margin-bottom: 20px;
+   padding: 5px;
+   font-size: 13px;
+   border-radius: 5px;
+   border: 2px solid blue;
+   font-family: Georgia, Times, 'Times New Roman', serif;
+}
+
+.nuevo button{
+    width: 90px;
+    background: white;
+    margin-left: 250px;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 5px;
+    border: 2px solid blue;
+    margin-top: 10px;
+}
+
+.nuevo button:hover{
+    background-color: skyblue;
+}
+
+table { 
+    display: block;
+    border-collapse: collapse; 
+    width: 100%; 
+    margin-top: 10px; 
+    margin-left: 90px
+}
+
+th, td { 
+    border: 5px solid #ddd; 
+    padding: 10px; 
+    text-align: center; 
+}
+
+th { 
+    background: #f6f6f6; 
+}
